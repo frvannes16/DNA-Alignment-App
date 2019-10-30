@@ -1,4 +1,5 @@
 from Bio import SeqIO
+from Bio.Align import PairwiseAligner
 from sys import argv
 from pathlib import Path
 
@@ -28,6 +29,18 @@ def stat_sequence(sequence_filepath):
         print(seq_record.description)
         print(repr(seq_record.seq))
         print(len(seq_record))
+
+def align(seq_a, seq_b):
+    aligner = PairwiseAligner()
+    alignments = aligner.align(seq_a, seq_b)
+    for alignment in alignments:
+        import pdb; pdb.set_trace()
+
+def score(seq_a, seq_b):
+    aligner = PairwiseAligner()
+    score = aligner.score(seq_a, seq_b)
+
+    return (aligner.match_score, aligner.mismatch_score)
 
 def main():
     print(get_proteins_filepaths())
