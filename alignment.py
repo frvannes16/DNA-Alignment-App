@@ -134,5 +134,13 @@ def main():
     # Load and print out details of the sequence
     stat_sequence(sequence_file)
 
+    dna_string = input('Paste the dna string: ')
+    dna_seq = Seq(dna_string)
+    protein_record = get_protein_sequence(sequence_file)
+
+    idx = protein_record.seq.find(dna_seq)
+    print("Found at index ", idx)
+    print(protein_record.seq[idx:idx+len(dna_seq)])
+
 if __name__ == '__main__':
     main()
