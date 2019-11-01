@@ -1,0 +1,23 @@
+{
+  "name": "dna_alignment_manager",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "dev": "webpack --mode development ./console/src/index.js --output ./console/static/console/main.js",
+    "build": "webpack --mode production ./console/src/index.js --output ./console/static/console/main.js"
+  },
+  "dependencies": {
+    "@babel/core": "^7.6.4",
+    "@babel/preset-env": "^7.6.3",
+    "@babel/preset-react": "^7.6.3",
+    "babel-loader": "^8.0.6",
+    "babel-plugin-transform-class-properties": "^6.24.1",
+    "eslint": "^6.6.0",
+    "flow": "^0.2.3",
+    "react": "^16.11.0",
+    "react-dom": "^16.11.0",
+    "webpack": "^4.41.2",
+    "webpack-cli": "^3.3.10"
+  }
+}
