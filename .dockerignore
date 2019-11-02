@@ -1,0 +1,8 @@
+__pycache__
+.vscode
+env
+protein_cache
+.git
+static
+media
+node_modules
