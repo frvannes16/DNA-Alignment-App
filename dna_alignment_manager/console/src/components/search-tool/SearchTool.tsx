@@ -10,6 +10,33 @@ interface SubmissionMessage {
   message: string;
 }
 
+interface SubmissionResponse {
+  submissionMessages: Array<SubmissionMessage>;
+}
+
+interface SubmissionRequest {
+  searchString: string;
+}
+
+const apiSearch = (
+  submission: SubmissionRequest
+): Promise<SubmissionResponse> => {
+  const url = '/api/search/submit';
+  return fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(submission),
+    cache: 'no-cache',
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  }).then(response => {
+    if (!response.ok) {
+      throw new Error(response.statusText);
+    }
+    return response.json() as Promise<SubmissionResponse>;
+  });
+};
+
 /**
  * The Search Tool is responsible for submitting new searches and displaying the status and results of previous search results.
  */
@@ -22,8 +49,20 @@ const SearchTool = () => {
   const executeSearch = () => {
     setSubmissionMessages(null);
     // submit the search to the API.
-    // If it succeeds, clear the input and poll for results.
-    // If it fails, show a failure message and keep the input.
+    if (searchDna.length > 0) {
+      const submission: SubmissionRequest = { searchString: searchDna };
+      apiSearch(submission).then(response => {
+        setSubmissionMessages(response.submissionMessages);
+        if (
+          !response.submissionMessages.some(
+            msg => msg.type === MessageType.ERROR
+          )
+        ) {
+          // Clear the DNA search field if there were no errors.
+          setSearchDna('');
+        }
+      });
+    }
   };
 
   return (

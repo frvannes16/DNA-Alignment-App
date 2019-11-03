@@ -1,5 +1,5 @@
 import Console from './components/Console.tsx';
-import React from 'react';
+import * as React from 'react';
 import ReactDOM from 'react-dom';
 
 const wrapper = document.getElementById('app');
