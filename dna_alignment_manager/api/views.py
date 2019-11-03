@@ -2,6 +2,7 @@ from django.http import JsonResponse
 from django.core import serializers
 from dataclasses import dataclass
 from .search import DnaSearchTool
+from .models import Search, Result
 import json
 
 
@@ -33,4 +34,6 @@ def submit_search(request):
 
 
 def poll_searches(request):
+    all_searches = Search.objects.all()
+
     return JsonResponse({'message': 'endpoint not supported'}, status=404)
