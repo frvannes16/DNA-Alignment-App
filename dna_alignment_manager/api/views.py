@@ -1,6 +1,7 @@
 from django.http import JsonResponse
 from django.core import serializers
 from dataclasses import dataclass
+from .search import DnaSearchTool
 import json
 
 
@@ -21,7 +22,7 @@ def submit_search(request):
         if 'searchString' in json_request:
             dna_query = json_request['searchString']
             # TODO: perform validation and string cleaning.
-            # Start search process. Ensure process has started.
+            DnaSearchTool.start_search(dna_query)
         return JsonResponse({'submissionMessages': [
             {'type': 'SUCCESS', 'message': 'Search Started'}
         ]})

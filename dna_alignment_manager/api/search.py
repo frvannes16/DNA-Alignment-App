@@ -9,7 +9,8 @@ from enum import Enum
 
 
 class ProteinStore:
-    protein_paths = [fasta_file for fasta_file in Path('protein_cache').iterdir(
+    protein_cache_dir = 'api/data/protein_cache'
+    protein_paths = [fasta_file for fasta_file in Path(protein_cache_dir).iterdir(
     ) if fasta_file.is_file() and fasta_file.suffix == '.fasta']
 
     @classmethod
@@ -40,7 +41,7 @@ class SearchResult:
 
 class DnaSearchTool:
     @classmethod
-    def search(cls, query: str) -> Type[SearchResult]:
+    def start_search(cls, query: str) -> Type[SearchResult]:
         query_seq = Seq(query)
         # Create search tasks, one for each protein file.
         search_tasks: List[Type[SearchTask]] = [SearchTask(
@@ -111,7 +112,7 @@ def _search_map_func(task: Type[SearchTask]) -> Type[SearchResult]:
 def main():
     input_dna: str = input(
         'Enter your DNA string to find a matching protein: ')
-    best_match = DnaSearchTool.search(input_dna)
+    best_match = DnaSearchTool.start_search(input_dna)
     if best_match is None:
         print("Match could not be found :(")
     else:
