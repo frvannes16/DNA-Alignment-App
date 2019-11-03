@@ -6,6 +6,7 @@ from typing import Type, List
 from dataclasses import dataclass
 from multiprocessing import Pool
 from enum import Enum
+from .models import Search, Result
 
 
 class ProteinStore:
@@ -43,15 +44,26 @@ class DnaSearchTool:
     @classmethod
     def start_search(cls, query: str) -> Type[SearchResult]:
         query_seq = Seq(query)
+        proteins_to_search = ProteinStore.list_all_proteins()
+
+        # Record this search. This record will be used to reference the results to.
+        search_id = cls._save_search(query_seq, len(proteins_to_search))
+
         # Create search tasks, one for each protein file.
-        search_tasks: List[Type[SearchTask]] = [SearchTask(
-            protein_filepath, query_seq) for protein_filepath in ProteinStore.list_all_proteins()]
+        search_tasks: List[Type[SearchTask]] = [SearchTask(search_id,
+                                                           protein_filepath, query_seq) for protein_filepath in proteins_to_search]
         # Issue the tasks to a pool
         with Pool() as thread_pool:
             results: List[Type[SearchResult]] = thread_pool.map(
                 _search_map_func, search_tasks)
 
-        return cls._best_match(results)
+    @classmethod
+    def _save_search(cls, query_seq: type(Seq), num_proteins_to_search: int) -> int:
+        new_search = Search.objects.create(status=Search.PROCESSING,
+                                           search_string=str(query_seq),
+                                           searches_issued=num_proteins_to_search)
+        new_search.save()
+        return new_search.id
 
     @classmethod
     def _best_match(cls, search_results: List[Type[SearchResult]]) -> SearchResult:
@@ -70,6 +82,7 @@ class DnaSearchTool:
 
 @dataclass
 class SearchTask:
+    search_id: int
     protein_file: Type[Path]
     query_seq: Type[Seq]
 
@@ -106,7 +119,13 @@ class SearchTask:
 
 
 def _search_map_func(task: Type[SearchTask]) -> Type[SearchResult]:
-    return task.executeSearch()
+    result = task.executeSearch()
+    result_score = -1000000
+    if result.match_found is True:
+        result_score = 10000000 if result.search_method == SearchType.STRING_MATCH else result.alignment.score
+    search = Search.objects.get(pk=task.search_id)
+    db_result = Result.objects.create(search=search, match_found=result.match_found, match_score=result_score, match_details=str(result))
+    db_result.save()
 
 
 def main():
