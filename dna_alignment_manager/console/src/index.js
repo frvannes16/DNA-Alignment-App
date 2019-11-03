@@ -1,4 +1,4 @@
-import Console from './components/Console.jsx';
+import Console from './components/Console.tsx';
 import React from 'react';
 import ReactDOM from 'react-dom';
 

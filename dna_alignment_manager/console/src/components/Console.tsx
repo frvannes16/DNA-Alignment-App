@@ -1,5 +1,5 @@
-// @flow
-import React from 'react'
+import * as React from 'react'
+import SearchTool from './search-tool/SearchTool';
 
 const Console = () =>
   <div>

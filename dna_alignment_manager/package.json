@@ -11,12 +11,16 @@
     "@babel/core": "^7.6.4",
     "@babel/preset-env": "^7.6.3",
     "@babel/preset-react": "^7.6.3",
+    "@babel/preset-typescript": "^7.6.0",
+    "@types/react": "^16.9.11",
+    "@types/react-dom": "^16.9.3",
     "babel-loader": "^8.0.6",
     "babel-plugin-transform-class-properties": "^6.24.1",
     "eslint": "^6.6.0",
-    "flow": "^0.2.3",
     "react": "^16.11.0",
     "react-dom": "^16.11.0",
+    "ts-loader": "^6.2.1",
+    "typescript": "^3.6.4",
     "webpack": "^4.41.2",
     "webpack-cli": "^3.3.10"
   }
