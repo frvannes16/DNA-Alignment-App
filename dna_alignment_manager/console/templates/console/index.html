@@ -16,6 +16,7 @@
         </div>
     </section>
 </body>
+{% csrf_token %} <!-- Placing the csrf token introduces the csrf_token to the user's cookie so that axios can access it.-->
 {% load static %}
 <script src="{% static 'console/main.js' %}"></script>
 

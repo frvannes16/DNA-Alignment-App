@@ -9,9 +9,9 @@ def no_path(request):
 
 
 def submit_search(request):
-    if request.is_ajax() and request.method == 'POST':
+    if request.method == 'POST':
         try:
-            json_request = json.load(request.body)
+            json_request = json.loads(request.body.decode('utf8'))
         except Exception as e:
             return JsonResponse({'submissionMessages': [
                 {'type': 'ERROR',

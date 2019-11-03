@@ -1,4 +1,10 @@
 import * as React from 'react';
+import axios from 'axios';
+
+/** This tells axios where to find the csrf token and to add it as a header. */
+axios.defaults.xsrfCookieName = 'csrftoken'
+axios.defaults.xsrfHeaderName = "X-CSRFTOKEN"
+axios.defaults.withCredentials = true
 
 enum MessageType {
   ERROR,
@@ -18,25 +24,6 @@ interface SubmissionRequest {
   searchString: string;
 }
 
-const apiSearch = (
-  submission: SubmissionRequest
-): Promise<SubmissionResponse> => {
-  const url = '/api/search/submit';
-  return fetch(url, {
-    method: 'POST',
-    body: JSON.stringify(submission),
-    cache: 'no-cache',
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  }).then(response => {
-    if (!response.ok) {
-      throw new Error(response.statusText);
-    }
-    return response.json() as Promise<SubmissionResponse>;
-  });
-};
-
 /**
  * The Search Tool is responsible for submitting new searches and displaying the status and results of previous search results.
  */
@@ -51,15 +38,12 @@ const SearchTool = () => {
     // submit the search to the API.
     if (searchDna.length > 0) {
       const submission: SubmissionRequest = { searchString: searchDna };
-      apiSearch(submission).then(response => {
-        setSubmissionMessages(response.submissionMessages);
-        if (
-          !response.submissionMessages.some(
-            msg => msg.type === MessageType.ERROR
-          )
-        ) {
-          // Clear the DNA search field if there were no errors.
-          setSearchDna('');
+      axios.post<SubmissionResponse>('/api/search/submit', submission).then(response => {
+        if (response && response.data && response.data.submissionMessages) {
+          setSubmissionMessages(response.data.submissionMessages);
+          if (!response.data.submissionMessages.some(msg => msg.type === MessageType.ERROR)) {
+            setSearchDna('')
+          }
         }
       });
     }
@@ -71,8 +55,8 @@ const SearchTool = () => {
       <div>
         {submissionMessages &&
           submissionMessages.map(message =>
-            <div>
-              {message}
+            <div key={message.message}>
+              <span>{message.type}:</span><span> {message.message}</span>
             </div>
           )}
       </div>
@@ -82,7 +66,7 @@ const SearchTool = () => {
           value={searchDna}
           onChange={e => setSearchDna(e.target.value)}
         />
-        <button type="submit" onClick={executeSearch}>
+        <button type="button" onClick={executeSearch}>
           Search
         </button>
       </form>
