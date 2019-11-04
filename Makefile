@@ -7,6 +7,16 @@ clean_proteins:
 
 clean: clean_proteins
 
+docker-run: 
+	docker run --rm -d --name dna_docker -p 8000:8000/tcp -e DNA_ALIGNER_SECRET=$DNA_ALIGNER_SECRET dna-alignment-app:latest
+
+docker-stop:
+	docker stop dna_docker
+
+docker-build:
+	docker build --rm -f "Dockerfile" -t dna-alignment-app:latest .
+
+
 all: fetch_proteins
 
 	
