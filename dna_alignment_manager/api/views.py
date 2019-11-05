@@ -21,7 +21,7 @@ def submit_search(request):
             ]})
 
         if 'searchString' in json_request:
-            dna_query = json_request['searchString']
+            dna_query = json_request['searchString'].upper()
             # TODO: perform validation and string cleaning.
             DnaSearchTool.start_search(dna_query)
         return JsonResponse({'submissionMessages': [
@@ -34,6 +34,5 @@ def submit_search(request):
 
 
 def poll_searches(request):
-    all_searches = Search.objects.all()
-
-    return JsonResponse({'message': 'endpoint not supported'}, status=404)
+    all_searches = [search.to_json_dict() for search in Search.objects.all()]
+    return JsonResponse({'searches': all_searches})

@@ -54,8 +54,9 @@ class DnaSearchTool:
                                                            protein_filepath, query_seq) for protein_filepath in proteins_to_search]
         # Issue the tasks to a pool
         with Pool() as thread_pool:
-            results: List[Type[SearchResult]] = thread_pool.map(
-                _search_map_func, search_tasks)
+            thread_pool.map_async(_start_search, search_tasks,
+                                  callback=_handle_search_result,
+                                  error_callback=_handle_failed_search)
 
     @classmethod
     def _save_search(cls, query_seq: type(Seq), num_proteins_to_search: int) -> int:
@@ -118,14 +119,48 @@ class SearchTask:
         return None
 
 
-def _search_map_func(task: Type[SearchTask]) -> Type[SearchResult]:
-    result = task.executeSearch()
+def _start_search(task: Type[SearchTask]) -> Type[SearchResult]:
+    return task.executeSearch()
+
+def _handle_failed_search(e):
+    import pdb; pdb.set_trace()
+
+def _handle_search_result(result: Type[SearchResult]) -> None:
+    import pdb; pdb.set_trace()
     result_score = -1000000
     if result.match_found is True:
         result_score = 10000000 if result.search_method == SearchType.STRING_MATCH else result.alignment.score
+    # save the results of the search.
     search = Search.objects.get(pk=task.search_id)
-    db_result = Result.objects.create(search=search, match_found=result.match_found, match_score=result_score, match_details=str(result))
+    db_result = Result.objects.create(search=search,
+                                      match_found=result.match_found,
+                                      match_score=result_score)
+    if (result.match_found is True):
+        db_result.protein = str(result.protein_rec.description)
+        db_result.match_start = result.start_idx
+        db_result.match_end = result.end_idx
     db_result.save()
+    # If all of the results have been collected, find the high scoring one, mark it as the best result, and then change the status of the Search
+    if (_search_complete(search)):
+        _set_search_match_status(search)
+
+
+def _search_complete(search: type(Search)) -> bool:
+    return (search.result_set.count() == search.searches_issued)
+
+
+def _set_search_match_status(search: type(Search)) -> None:
+    matches = [
+        result for result in search.result_set.all() if result.match_found is True]
+    best_result = max(matches, key=lambda result: result.match_score) if len(
+        matches) > 0 else None
+    if best_result is None:
+        search.status = search.NO_MATCH
+    else:
+        best_result.is_best_match = True
+        best_result.save()
+        search.status = search.MATCH_FOUND
+    search.save()
 
 
 def main():
