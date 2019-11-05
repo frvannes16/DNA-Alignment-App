@@ -3,7 +3,7 @@ import SearchTool from './search-tool/SearchTool';
 import ResultsContainer from './results/ResultsContainer';
 
 const Console = () =>
-  <div>
+  <div className={'content'}>
     <h1>DNA Search Tool</h1>
     <h2>Franklin van Nes</h2>
     <SearchTool/>

@@ -16,8 +16,58 @@
         </div>
     </section>
 </body>
-{% csrf_token %} <!-- Placing the csrf token introduces the csrf_token to the user's cookie so that axios can access it.-->
+{% csrf_token %}
+<!-- Placing the csrf token introduces the csrf_token to the user's cookie so that axios can access it.-->
 {% load static %}
+<!-- I know inline stlying is bad practice, and I would ordinarily use css-modules, 
+    but Typescript has very poor support for css modules and I had little
+    remaining time. So inline styles are the result.-->
+<style>
+    .content {
+        font-family: Roboto, sans-serif;
+    }
+
+    .results {
+        width: 100%;
+        background: #e5e5ff;
+        border: 2px solid #ccccff;
+        border-radius: 5px;
+    }
+
+    .row {
+        border-top: 2px solid #fff;
+        padding: 5px;
+    }
+
+    .status {
+        font-weight: bold;
+    }
+
+    .processing {
+        color: blue;
+    }
+
+    .failed {
+        color: red;
+    }
+
+    .matchFound {
+        color: green;
+    }
+
+    .noMatch {
+        color: black;
+    }
+
+    textarea {
+        width: 40%;
+        height: 200px;
+    }
+    
+    button {
+        display: block;
+    }
+</style>
 <script src="{% static 'console/main.js' %}"></script>
 
 </html>

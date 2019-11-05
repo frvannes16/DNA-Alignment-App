@@ -5,8 +5,22 @@ interface Props {
   results: Array<Result>;
 }
 
+const getStatusStyle = (status: string) => {
+  switch (status) {
+    case 'PROCESSING':
+      return 'processing';
+    case 'FAILED':
+      return 'failed';
+    case 'MATCH_FOUND':
+      return 'matchFound';
+    case 'NO_MATCH':
+    default:
+      return 'noMatch';
+  }
+};
+
 const Results = (props: Props) =>
-  <table>
+  <table className={'results'}>
     <thead>
       <tr>
         <th>ID</th>
@@ -21,14 +35,14 @@ const Results = (props: Props) =>
       {props.results &&
         props.results.map(result => {
           return (
-            <tr key={result.searchId}>
+            <tr key={result.searchId} className={'row'}>
               <td>
                 {result.searchId}
               </td>
               <td>
                 {result.searchString}
               </td>
-              <td>
+              <td className={`${getStatusStyle(result.status)} status`}>
                 {result.status}
               </td>
               <td>

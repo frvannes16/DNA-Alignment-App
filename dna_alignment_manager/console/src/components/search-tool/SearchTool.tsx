@@ -49,8 +49,7 @@ const SearchTool = () => {
       <h3>Submit a new search</h3>
       <SearchMessages messages={submissionMessages} />
       <form name="search-form">
-        <input
-          type="text"
+        <textarea
           value={searchDna}
           onChange={e => setSearchDna(e.target.value)}
         />
