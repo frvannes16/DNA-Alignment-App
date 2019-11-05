@@ -25,7 +25,7 @@ SECRET_KEY = os.environ['DNA_ALIGNER_SECRET']
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', 'dev.franklinvannes.com']
 
 
 # Application definition
