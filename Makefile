@@ -16,6 +16,15 @@ docker-stop:
 docker-build:
 	docker build --rm -f "Dockerfile" -t dna-alignment-app:latest .
 
+start-celery-worker:
+	celery -A dna_alignment_manager worker -l info
+
+start-redis:
+	docker start redis-instance
+
+stop-redis:
+	docker stop redis-instance
+
 
 all: fetch_proteins
 
