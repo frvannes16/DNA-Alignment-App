@@ -1,0 +1,7 @@
+{
+  "GOOGLE_CLOUD_PROJECT": "ginkgo-interview",
+  "minikube": "True",
+  "base64_db_pw": "bGFranNkbG5qZXBpMjFsbTA5Cg==",
+  "hot_reload": "True",
+  "hotreload_directory": "/home/fvannes/Documents/jobs/ginkgo/DNA-Alignment-App/dna_alignment_manager"
+}

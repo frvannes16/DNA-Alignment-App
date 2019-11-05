@@ -20,6 +20,6 @@ build:
 
 .PHONY: push
 push: build
-	gcloud docker push gcr.io/$(GOOGLE_CLOUD_PROJECT)/postgres-pw
+	docker push gcr.io/$(GOOGLE_CLOUD_PROJECT)/postgres-pw
 
 

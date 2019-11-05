@@ -113,4 +113,5 @@ media
 # Extra files
 protein_cache/
 .vscode/
-
+*_gke.yaml
+gke_jinja.json

@@ -1,4 +1,4 @@
- Copyright 2016 Google Inc.
+# Copyright 2016 Google Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -25,6 +25,15 @@ APP_POD_NAME=$(shell kubectl get pods | grep dna_alignment_manager -m 1 | awk '{
 .PHONY: all
 all: deploy
 
+.PHONY: build
+build:
+	docker build -t gcr.io/$(GOOGLE_CLOUD_PROJECT)/dna_alignment_manager .
+
+.PHONY: push
+push: build
+	docker push gcr.io/$(GOOGLE_CLOUD_PROJECT)/dna_alignment_manager
+
+
 .PHONY: create-cluster
 create-cluster:
 	gcloud container clusters create guestbook \
@@ -39,13 +48,18 @@ create-bucket:
 
 .PHONY: template
 template:
+	# minikube templates
+	jinja2 k8s-configs/app/dna_alignment_manager.yaml.jinja minikube_jinja.json --format=json > k8s-configs/app/dna_alignment_manager_minikube.yaml
+	jinja2 k8s-configs/postgres/postgres.yaml.jinja minikube_jinja.json --format=json > k8s-configs/postgres/postgres_minikube.yaml
+	jinja2 k8s-configs/worker/worker.yaml.jinja minikube_jinja.json --format=json > k8s-configs/worker/worker_minikube.yaml
 	# GKE templates
-	jinja2 k8s-config/app/dna_alignment_manager.yaml.jinja gke_jinja.json --format=json > k8s-config/dna_alignment_manager/dna_alignment_manager_gke.yaml
-	jinja2 k8s-config/postgres/postgres.yaml.jinja gke_jinja.json --format=json > k8s-config/postgres/postgres_gke.yaml
+	jinja2 k8s-configs/app/dna_alignment_manager.yaml.jinja gke_jinja.json --format=json > k8s-configs/app/dna_alignment_manager_gke.yaml
+	jinja2 k8s-configs/postgres/postgres.yaml.jinja gke_jinja.json --format=json > k8s-configs/postgres/postgres_gke.yaml
+	jinja2 k8s-configs/worker/worker.yaml.jinja gke_jinja.json --format=json > k8s-configs/worker/worker_gke.yaml
 
 .PHONY: deploy
 deploy: push template
-	kubectl apply -f k8s-config/app/dna_alignment_manager_gke.yaml
+	kubectl apply -f k8s-configs/app/dna_alignment_manager_gke.yaml
 
 .PHONY: update
 update:

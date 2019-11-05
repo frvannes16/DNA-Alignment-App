@@ -23,24 +23,20 @@ spec:
       terminationGracePeriodSeconds: 0
       containers:
       - name: alignment_worker
-        image: gcr.io/{{ GOOGLE_CLOUD_PROJECT }}/dna_alignment_manager:latest
-        {% if minikube %}
+        image: gcr.io/ginkgo-interview/dna_alignment_manager:latest
+        
         imagePullPolicy: IfNotPresent
-       {%- endif %}
         ports:
         - containerPort: 8000
-      {% if hot_reload %}
+      
       volumeMounts:
       - name: reload
         mountPath: /app
-      {%- endif %}
       volumes:
       - name: secrets
         secret:
-          secretName: db-passwords
-      {%-if hot_reload -%}
-      - name: reload
+          secretName: db-passwords- name: reload
         hostPath:
-          path: {{ hotreload_directory }}
-      {% endif %}
+          path: /home/fvannes/Documents/jobs/ginkgo/DNA-Alignment-App/dna_alignment_manager
+      
         

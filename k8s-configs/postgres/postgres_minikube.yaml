@@ -19,9 +19,8 @@ kind: Secret
 metadata:
   name: db-passwords
 data:
-  djangouserpw: {{ base64_db_pw }}
+  djangouserpw: bGFranNkbG5qZXBpMjFsbTA5Cg==
 ---
-{% if minikube -%}
 apiVersion: v1
 kind: PersistentVolume
 metadata:
@@ -33,20 +32,7 @@ spec:
    storage: 5Gi
  hostPath:
    path: /data/pv0001/
-{% else -%}
-apiVersion: v1
-kind: PersistentVolume
-metadata:
-  name: pv0001
-spec:
-  accessModes:
-    - ReadWriteOnce
-  capacity:
-    storage: 5Gi
-  gcePersistentDisk:
-    pdName: {{ gce_disk_name }}
-    fsType: ext4
-{% endif %}
+
 ---
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -61,7 +47,7 @@ spec:
     spec:
       containers:
       - name: postgres
-        image: gcr.io/{{ GOOGLE_CLOUD_PROJECT }}/postgres-pw
+        image: gcr.io/ginkgo-interview/postgres-pw
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 5432
