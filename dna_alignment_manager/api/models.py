@@ -54,3 +54,8 @@ class Result(models.Model):
             'startPos': self.match_start,
             'endPos': self.match_end
         }
+
+class SearchTaskRecord(models.Model):
+    search = models.ForeignKey(Search, on_delete=models.CASCADE)
+    protein_filepath = models.CharField(null=False, max_length=500)
+    query = models.TextField(null=False)

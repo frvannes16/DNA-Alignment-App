@@ -6,7 +6,8 @@ from typing import Type, List
 from dataclasses import dataclass
 from multiprocessing import Pool
 from enum import Enum
-from .models import Search, Result
+from .models import Search, Result, SearchTaskRecord
+from dna_alignment_manager import celery_app
 
 
 class ProteinStore:
@@ -32,6 +33,7 @@ class SearchType(Enum):
 
 @dataclass
 class SearchResult:
+    search_id: int
     match_found: bool
     protein_rec: type(SeqRecord)
     start_idx: int
@@ -42,29 +44,31 @@ class SearchResult:
 
 class DnaSearchTool:
     @classmethod
-    def start_search(cls, query: str) -> Type[SearchResult]:
+    def start_search(cls, query: str):
         query_seq = Seq(query)
         proteins_to_search = ProteinStore.list_all_proteins()
 
-        # Record this search. This record will be used to reference the results to.
-        search_id = cls._save_search(query_seq, len(proteins_to_search))
+        search = cls._save_search(query_seq, len(proteins_to_search))
 
         # Create search tasks, one for each protein file.
-        search_tasks: List[Type[SearchTask]] = [SearchTask(search_id,
-                                                           protein_filepath, query_seq) for protein_filepath in proteins_to_search]
-        # Issue the tasks to a pool
-        with Pool() as thread_pool:
-            thread_pool.map_async(_start_search, search_tasks,
-                                  callback=_handle_search_result,
-                                  error_callback=_handle_failed_search)
+        search_tasks: List[Type[SearchTaskRecord]] = list()
+        for protein in proteins_to_search:
+            search_tasks += [SearchTaskRecord.objects.create(search=search,
+                                                             protein_filepath=str(
+                                                                 protein),
+                                                             query=str(query_seq))]
+
+        # Issue the tasks to the celery workers
+        for task in search_tasks:
+            execute_search.delay(task.id)
 
     @classmethod
-    def _save_search(cls, query_seq: type(Seq), num_proteins_to_search: int) -> int:
+    def _save_search(cls, query_seq: type(Seq), num_proteins_to_search: int) -> Search:
         new_search = Search.objects.create(status=Search.PROCESSING,
                                            search_string=str(query_seq),
                                            searches_issued=num_proteins_to_search)
         new_search.save()
-        return new_search.id
+        return new_search
 
     @classmethod
     def _best_match(cls, search_results: List[Type[SearchResult]]) -> SearchResult:
@@ -87,7 +91,7 @@ class SearchTask:
     protein_file: Type[Path]
     query_seq: Type[Seq]
 
-    def executeSearch(self) -> Type[SearchResult]:
+    def execute_search(self) -> Type[SearchResult]:
         # Load the protein sequence.
         target_rec = ProteinStore.get_protein_record(self.protein_file)
         if target_rec is not None:
@@ -95,7 +99,8 @@ class SearchTask:
             start_idx: int = target_rec.seq.find(self.query_seq)
             if start_idx > -1:
                 # Successful string match!
-                return SearchResult(match_found=True,
+                return SearchResult(search_id=self.search_id,
+                                    match_found=True,
                                     protein_rec=target_rec,
                                     start_idx=start_idx,
                                     end_idx=start_idx+len(self.query_seq),
@@ -105,33 +110,33 @@ class SearchTask:
             matching_alignment = self.align(target_rec)
             if matching_alignment is not None:
                 # Successful alignment!
-                return SearchResult(match_found=True,
+                return SearchResult(search_id=self.search_id,
+                                    match_found=True,
                                     protein_rec=target_rec,
                                     start_idx=0,
                                     end_idx=0,
                                     search_method=SearchType.ALIGNMENT,
                                     alignment=matching_alignment)
         # No results found
-        return SearchResult(match_found=False, search_method=SearchType.ALIGNMENT, protein_rec=None, start_idx=0, end_idx=0, alignment=None)
+        return SearchResult(search_id=self.search_id,
+                            match_found=False,
+                            search_method=SearchType.ALIGNMENT,
+                            protein_rec=None,
+                            start_idx=0,
+                            end_idx=0,
+                            alignment=None)
 
     def align(self, target_rec: type(SeqRecord)) -> type(PairwiseAlignment):
         print('Pairwise alignment is not yet supported.')
         return None
 
 
-def _start_search(task: Type[SearchTask]) -> Type[SearchResult]:
-    return task.executeSearch()
-
-def _handle_failed_search(e):
-    import pdb; pdb.set_trace()
-
 def _handle_search_result(result: Type[SearchResult]) -> None:
-    import pdb; pdb.set_trace()
     result_score = -1000000
     if result.match_found is True:
         result_score = 10000000 if result.search_method == SearchType.STRING_MATCH else result.alignment.score
     # save the results of the search.
-    search = Search.objects.get(pk=task.search_id)
+    search = Search.objects.get(pk=result.search_id)
     db_result = Result.objects.create(search=search,
                                       match_found=result.match_found,
                                       match_score=result_score)
@@ -161,6 +166,16 @@ def _set_search_match_status(search: type(Search)) -> None:
         best_result.save()
         search.status = search.MATCH_FOUND
     search.save()
+
+
+@celery_app.task
+def execute_search(search_task_record_id: int):
+    record = SearchTaskRecord.objects.get(pk=search_task_record_id)
+    search_task = SearchTask(search_id=record.search.id,
+                             protein_file=Path(record.protein_filepath),
+                             query_seq=Seq(record.query))
+    result = search_task.execute_search()
+    _handle_search_result(result)
 
 
 def main():

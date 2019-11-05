@@ -5,7 +5,7 @@ COPY . /opt/app/
 WORKDIR /opt/app/dna_alignment_manager
 
 # install dependencies (yarn, maybe sqllite?)
-RUN apk add --update --no-cache yarn make build-base gcc gfortran python python-dev py-pip && \
+RUN apk add --update --no-cache yarn make build-base postgresql-dev gcc gfortran python python-dev py-pip && \
     pip install --no-cache -r requirements.txt
 
 RUN yarn install && yarn run build
