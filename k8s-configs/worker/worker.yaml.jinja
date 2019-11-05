@@ -1,0 +1,39 @@
+# The worker deployment is simply a set of replicas of the main 
+# service that exist only to execute celery tasks. 
+# They don't need to be publicly exposed, so they are not given a port number.
+
+# There are 3 replicas running, enough to perform lots of alignments simultaneously.
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: worker
+  labels:
+    worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      terminationGracePeriodSeconds: 0
+      containers:
+      - name: alignment_worker
+        image: gcr.io/{{ GOOGLE_CLOUD_PROJECT }}/dna_alignment_manager:latest
+        command: ["./run_celery.sh"]
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+      volumes:
+      - name: secrets
+        secret:
+          secretName: db-passwords
+        

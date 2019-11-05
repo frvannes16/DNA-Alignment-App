@@ -1,10 +1,9 @@
 FROM python:3-alpine
 
-COPY . /opt/app/
+COPY ../../../dna_alignment_manager /opt/app/
 
 WORKDIR /opt/app/dna_alignment_manager
 
-# install dependencies (yarn, maybe sqllite?)
 RUN apk add --update --no-cache yarn make build-base gcc gfortran python python-dev py-pip && \
     pip install --no-cache -r requirements.txt
 

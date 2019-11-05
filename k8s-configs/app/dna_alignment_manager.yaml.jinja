@@ -1,0 +1,39 @@
+
+# This manifest creates a load balanced, replicated dna_alignment_manager for hosting on GCP.
+
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dna_alignment_manager
+  labels:
+    name: dna_alignment_manager
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        name: dna_alignment_manager
+    spec:
+      containers:
+      - name: dna_alignment_manager
+        image: gcr.io/{{ GOOGLE_CLOUD_PROJECT }}/dna_alignment_manager:latest
+        ports:
+        - containerPort: 8000
+      volumes:
+      - name: secrets
+        secret:
+          secretName: db-passwords
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: dna_alignment_manager
+  labels:
+    name: dna_alignment_manager
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 8000
+  selector:
+    name: dna_alignment_manager

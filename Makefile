@@ -1,22 +1,79 @@
-fetch_proteins:
-	mkdir -p dna_alignment_manager/api/data/protein_cache
-	cat proteins | xargs -I {} wget -O dna_alignment_manager/api/data/protein_cache/{}.fasta 'https://www.ncbi.nlm.nih.gov/search/api/sequence/{}/?report=fasta'
+ Copyright 2016 Google Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License
 
-clean_proteins:
-	rm -rf protein_cache
+GOOGLE_CLOUD_PROJECT:=$(shell gcloud config list project --format="value(core.project)")
+ZONE=$(shell gcloud config list compute/zone --format="value(compute.zone)")
+CLUSTER_NAME=dna_search_app
+COOL_DOWN=15
+MIN=2
+MAX=8
+TARGET=50
+DEPLOYMENT=dna_alignment_manager
+APP_POD_NAME=$(shell kubectl get pods | grep dna_alignment_manager -m 1 | awk '{print $$1}' )
 
-clean: clean_proteins
+.PHONY: all
+all: deploy
 
-docker-run: 
-	docker run --rm -d --name dna_docker -p 8000:8000/tcp -e DNA_ALIGNER_SECRET=$DNA_ALIGNER_SECRET dna-alignment-app:latest
+.PHONY: create-cluster
+create-cluster:
+	gcloud container clusters create guestbook \
+		--scope "https://www.googleapis.com/auth/userinfo.email","cloud-platform" \
+		--num-nodes=$(MIN)
+	gcloud container clusters get-credentials guestbook
 
-docker-stop:
-	docker stop dna_docker
+.PHONY: create-bucket
+create-bucket:
+	gsutil mb gs://$(GOOGLE_CLOUD_PROJECT)
+	gsutil defacl set public-read gs://$(GOOGLE_CLOUD_PROJECT)
 
-docker-build:
-	docker build --rm -f "Dockerfile" -t dna-alignment-app:latest .
+.PHONY: template
+template:
+	# GKE templates
+	jinja2 k8s-config/app/dna_alignment_manager.yaml.jinja gke_jinja.json --format=json > k8s-config/dna_alignment_manager/dna_alignment_manager_gke.yaml
+	jinja2 k8s-config/postgres/postgres.yaml.jinja gke_jinja.json --format=json > k8s-config/postgres/postgres_gke.yaml
 
+.PHONY: deploy
+deploy: push template
+	kubectl apply -f k8s-config/app/dna_alignment_manager_gke.yaml
 
-all: fetch_proteins
+.PHONY: update
+update:
+	kubectl rolling-update frontend --image=gcr.io/${GOOGLE_CLOUD_PROJECT}/dna_alignment_manager:latest
 
-	
+.PHONY: disk
+disk:
+	gcloud compute disks create pg-data  --size 15GB
+
+.PHONY: firewall
+firewall:
+	gcloud compute firewall-rules create kubepostgres --allow tcp:30061
+
+.PHONY: autoscale-on
+autoscale-on:
+	AUTOSCALE_GROUP=$(shell gcloud container clusters describe $(CLUSTER_NAME) --zone $(ZONE) --format yaml | grep -A 1 instanceGroupUrls | awk -F/ 'FNR ==2 {print $$NF}')
+	gcloud compute instance-groups managed set-autoscaling $(AUTOSCALE_GROUP) \
+	  --cool-down-period $(COOL_DOWN) \
+	  --max-num-replicas $(MAX) \
+	  --min-num-replicas $(MIN) \
+	  --scale-based-on-cpu --target-cpu-utilization $(shell echo "scale=2; $(TARGET)/100" | bc)
+	kubectl autoscale rc $(DEPLOYMENT) --min=$(MIN) --max=$(MAX) --cpu-percent=$(TARGET)
+
+.PHONY: migrations
+migrations:
+	kubectl exec $(APP_POD_NAME) -- python /app/manage.py migrate
+
+.PHONY: delete
+delete:
+	gcloud container clusters delete $(CLUSTER_NAME)
+	gcloud compute disks delete pg-data

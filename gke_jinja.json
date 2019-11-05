@@ -1,0 +1,5 @@
+{
+    "GOOGLE_CLOUD_PROJECT" : "ginkgo-interview",
+    "base64_db_pw": "",
+    "gce_disk_name": "pg_data"
+  }
