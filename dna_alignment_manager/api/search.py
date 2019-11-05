@@ -6,6 +6,7 @@ from typing import Type, List
 from dataclasses import dataclass
 from multiprocessing import Pool
 from enum import Enum
+from random import shuffle
 from .models import Search, Result, SearchTaskRecord
 from dna_alignment_manager import celery_app
 
@@ -17,6 +18,7 @@ class ProteinStore:
 
     @classmethod
     def list_all_proteins(cls) -> List[Type[Path]]:
+        shuffle(cls.protein_paths)
         return cls.protein_paths
 
     @classmethod
