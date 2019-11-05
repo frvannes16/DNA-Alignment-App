@@ -17,7 +17,7 @@ docker-build:
 	docker build --rm -f "Dockerfile" -t dna-alignment-app:latest .
 
 start-celery-worker:
-	cd dna_alignment_manager && celery -A dna_alignment_manager worker -l info
+	cd dna_alignment_manager && celery -A dna_alignment_manager worker --concurrency=4
 
 start-redis:
 	docker start redis-instance
