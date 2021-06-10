@@ -1,5 +1,5 @@
 biopython==1.74
 numpy==1.17.3
-Django==2.2.13
+Django==2.2.24
 redis==3.3.11
 celery==4.3.0
