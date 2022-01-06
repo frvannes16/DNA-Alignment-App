@@ -2,4 +2,4 @@ biopython==1.74
 numpy==1.17.3
 Django==2.2.13
 redis==3.3.11
-celery==4.3.0
+celery==5.2.2
